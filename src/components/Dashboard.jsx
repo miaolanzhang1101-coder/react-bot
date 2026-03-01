@@ -1,24 +1,23 @@
-
 import { useState, useEffect } from "react";
 
-// ─── Data ──────────────────────────────────────────────────────────────────
+// ─── Data ─────────────────────────────────────────────────────────────────────
 const SESSIONS = [
   {
-    id: "s3", name: "Session 3", status: "in-progress", risk: "high-risk",
-    errorsFixed: 2,
+    id: "s3", label: "In Progress", name: "Session 3",
+    badges: [{ text: "high-risk", variant: "risk" }, { text: "2 errors fixed", variant: "fixed" }],
     runs: [
-      { id: "r1", user: "gbh123_user-v1", time: "4h ago", sub: ["gchat_handle_user", "gchat_handle_user"] },
-      { id: "r2", user: "gbh123_user-v1", time: "4h ago" },
-      { id: "r3", user: "gbh123_user-v1", time: "4h ago" },
+      { id: "r1", user: "gbh123_user-v7", time: "4h ago", subs: ["gchat_handle_user", "gchat_handle_user"] },
+      { id: "r2", user: "gbh123_user-v2", time: "4h ago" },
+      { id: "r3", user: "gbh123_user-v3", time: "4h ago" },
     ],
   },
   {
-    id: "s1", name: "Session 1", status: "completed", risk: "high-risk",
-    errorsFixed: 8,
+    id: "s1", label: "Completed", name: "Session 1",
+    badges: [{ text: "8 errors fixed", variant: "fixed" }],
     runs: [
-      { id: "r4", user: "gbh123_user-v1", time: "1d ago" },
-      { id: "r5", user: "gbh123_user-v1", time: "1d ago" },
-      { id: "r6", user: "gbh123_user-v1", time: "1d ago" },
+      { id: "r4", user: "gbh123_user-v4", time: "1d ago" },
+      { id: "r5", user: "gbh123_user-v5", time: "1d ago" },
+      { id: "r6", user: "gbh123_user-v6", time: "1d ago" },
     ],
   },
 ];
@@ -26,208 +25,463 @@ const SESSIONS = [
 const INTENT_SECTIONS = [
   {
     label: "In Progress", items: [
-      { id: "i1", title: "Update User Schema", user: "gbh123_user-v1", changes: 20, time: "10:45 AM", intents: 2, type: "API change" },
-      { id: "i2", title: "Update User Schema", user: "gbh123_user-v1", changes: 20, time: "10:45 AM", intents: 2, type: "API change" },
-      { id: "i3", title: "Update User Schema", user: "gbh123_user-v1", changes: 20, time: "10:45 AM", intents: 2, type: "API change" },
+      { id: "i1", title: "Fix The NullPointerException....", tags: ["Cross-module", "Bug fix"],     user: "gbh123_user-v1", meta: "14 files",    time: "10:45 AM", selected: true },
+      { id: "i2", title: "Replace All Raw SQL Queries",    tags: ["Cross-module", "API change"],   user: "gbh123_user-v1", meta: "20 changes",  time: "10:45 AM" },
+      { id: "i3", title: "Split UserService",              tags: ["Cross-module", "Schema change"], user: "gbh123_user-v1", meta: "20 changes",  time: "10:45 AM" },
     ],
   },
   {
-    label: "Modified", items: [
-      { id: "i4", title: "Update User Schema", user: "gbh123_user-v1", changes: 20, time: "10:45 AM", intents: 2, type: "API change" },
-      { id: "i5", title: "Update User Schema", user: "gbh123_user-v1", changes: 20, time: "10:45 AM", intents: 2, type: "API change" },
+    label: "Approved", items: [
+      { id: "i4", title: "Add Request Validation",         tags: ["Cross-module", "API change"],   user: "gbh123_user-v1", meta: "20 changes",  time: "10:45 AM" },
+      { id: "i5", title: "Implement Refresh Token",        tags: ["Cross-module", "API change"],   user: "gbh123_user-v1", meta: "20 changes",  time: "10:45 AM" },
     ],
   },
 ];
 
-const GRAPH_NODES = [
-  { id: "g1", title: "Update User Schema", detail: "Public API changes: 2", x: 680, y: 60,  risk: null,        step: null },
-  { id: "g2", title: "Update User Schema", detail: "Public API changes: 2", x: 340, y: 210, risk: "high-risk", step: "Step 2" },
-  { id: "g3", title: "Update User Schema", detail: "Public API changes: 2", x: 680, y: 330, risk: null,        step: null },
-  { id: "g4", title: "Update User Schema", detail: "Public API changes: 2", x: 680, y: 540, risk: null,        step: null },
+const NODES = [
+  {
+    id: "n1", x: 90,  y: 120,
+    title: "Migrate User ID...",
+    branch: "Branch 1",
+    created: "02:30", edited: "12:40",
+    files: [
+      { id: "f1", name: "pom.xml",               icon: "xml",  badge: "M" },
+      { id: "f2", name: "UpdateUserSchema.java",  icon: "java", badge: null },
+      { id: "f3", name: "UpdateResult.java",      icon: "java", badge: null },
+    ],
+  },
+  {
+    id: "n2", x: 420, y: 60,
+    title: "Migrate User ID...",
+    branch: null,
+    apiChanges: 2,
+    created: "02:30", edited: "12:40",
+    files: [],
+  },
 ];
 
-const EDGES = [
-  { from: "g2", to: "g1" },
-  { from: "g2", to: "g3" },
-  { from: "g2", to: "g4" },
+const DIFF_LINES = [
+  { type: "context", ln: 1,  content: `<project xmlns="http://maven.apache.org/POM/4.0.0">` },
+  { type: "context", ln: 2,  content: `  <modelVersion>4.0.0</modelVersion>` },
+  { type: "collapsed", count: 12, label: "↓ 12 unchanged lines" },
+  { type: "context", ln: 15, content: `  <properties>` },
+  { type: "removed", ln: 16, content: `    <spring-boot.version>2.7.0</spring-boot.version>` },
+  { type: "added",   ln: 16, content: `    <spring-boot.version>3.1.0</spring-boot.version>` },
+  { type: "context", ln: 17, content: `  </properties>` },
+  { type: "context", ln: 18, content: `` },
+  { type: "context", ln: 19, content: `  <dependencies>` },
+  { type: "context", ln: 20, content: `    <dependency>` },
+  { type: "removed", ln: 21, content: `      <groupId>javax.persistence</groupId>` },
+  { type: "added",   ln: 21, content: `      <groupId>jakarta.persistence</groupId>` },
+  { type: "removed", ln: 22, content: `      <artifactId>javax.persistence-api</artifactId>` },
+  { type: "added",   ln: 22, content: `      <artifactId>jakarta.persistence-api</artifactId>` },
+  { type: "removed", ln: 23, content: `      <version>2.2</version>` },
+  { type: "added",   ln: 23, content: `      <version>3.1.0</version>` },
+  { type: "context", ln: 24, content: `    </dependency>` },
+  { type: "collapsed", count: 28, label: "↓ 28 unchanged lines" },
+  { type: "context", ln: 53, content: `  </dependencies>` },
+  { type: "context", ln: 54, content: `</project>` },
 ];
 
-// ─── Pulse ring indicator (replaces spinner) ────────────────────────────────
-function PulseRing() {
-  return <span className="pulse-ring"><span className="pulse-core" /></span>;
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function XmlToken({ text }) {
+  if (!text || !text.trim()) return <span>{text}</span>;
+  const parts = [];
+  let i = 0, key = 0;
+  while (i < text.length) {
+    if (text[i] === '<') {
+      const isClose = text[i + 1] === '/';
+      let j = i + (isClose ? 2 : 1);
+      let tag = '';
+      while (j < text.length && /[\w.-]/.test(text[j])) { tag += text[j++]; }
+      parts.push(<span key={key++} style={{ color: '#89ddff' }}>{isClose ? '</' : '<'}</span>);
+      if (tag) parts.push(<span key={key++} style={{ color: '#f07178' }}>{tag}</span>);
+      i = j;
+    } else if (text[i] === '>' || (text[i] === '/' && text[i+1] === '>')) {
+      const v = text[i] === '/' ? '/>' : '>';
+      parts.push(<span key={key++} style={{ color: '#89ddff' }}>{v}</span>);
+      i += v.length;
+    } else if (text[i] === '"') {
+      let j = i + 1;
+      while (j < text.length && text[j] !== '"') j++;
+      parts.push(<span key={key++} style={{ color: '#c3e88d' }}>{text.slice(i, j + 1)}</span>);
+      i = j + 1;
+    } else {
+      let j = i;
+      while (j < text.length && text[j] !== '<' && text[j] !== '"' && text[j] !== '>') j++;
+      const chunk = text.slice(i, j);
+      parts.push(<span key={key++} style={{ color: '#c4ccdf' }}>{chunk}</span>);
+      i = j;
+    }
+  }
+  return <>{parts}</>;
 }
 
-// ─── Graph panel ──────────────────────────────────────────────────────────────
-function GraphPanel({ selectedNode, onSelectNode }) {
-  const W = 580, H = 680;
-  const NODE_W = 200, NODE_H = 80;
+function FileIcon({ type }) {
+  if (type === "xml") return (
+    <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+      <path d="M4 6l-2 2 2 2M12 6l2 2-2 2M9 4l-2 8" stroke="#63b3ed" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  );
+  return (
+    <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+      <path d="M8 2C5.8 2 4 3.8 4 6c0 1.5.8 2.8 2 3.5V11h4V9.5c1.2-.7 2-2 2-3.5 0-2.2-1.8-4-4-4z" stroke="#f5a442" strokeWidth="1.2"/>
+      <rect x="5" y="11" width="6" height="2" rx="1" stroke="#f5a442" strokeWidth="1.2"/>
+    </svg>
+  );
+}
 
-  const cx = (n) => n.x + NODE_W;
-  const cy = (n) => n.y + NODE_H / 2;
-  const getNode = (id) => GRAPH_NODES.find((n) => n.id === id);
+function SpinnerIcon() {
+  return (
+    <svg viewBox="0 0 14 14" fill="none" width="13" height="13" style={{ animation: "spin 2s linear infinite", color: "#63b3ed", flexShrink: 0 }}>
+      <path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.93 2.93l1.41 1.41M9.66 9.66l1.41 1.41M2.93 11.07l1.41-1.41M9.66 4.34l1.41-1.41"
+        stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// ─── Graph node component ─────────────────────────────────────────────────────
+function GraphNode({ node, expanded, selectedFile, onExpand, onFileClick }) {
+  const NODE_W = 310;
+  const BASE_H = 110;
+  const FILE_H = 44;
 
   return (
-    <div className="graph-canvas">
-      <svg width="100%" height={H} viewBox={`0 0 ${W + 160} ${H}`} preserveAspectRatio="xMidYMid meet">
+    <div
+      className="gnode"
+      style={{
+        position: "absolute",
+        left: node.x,
+        top: node.y,
+        width: NODE_W,
+      }}
+    >
+      <div
+        className={`gnode-card ${expanded ? "gnode-expanded" : ""}`}
+        onClick={() => !expanded && onExpand(node.id)}
+        style={{ cursor: expanded ? "default" : "pointer" }}
+      >
+        <div className="gnode-header">
+          <span className="gnode-title">{node.title}</span>
+          {node.branch && <span className="badge-branch">{node.branch}</span>}
+          {node.apiChanges && <span className="gnode-api">API changes: {node.apiChanges}</span>}
+        </div>
+
+        <div className="gnode-meta">
+          {node.apiChanges && <span className="gnode-view-detail">View detail</span>}
+          <div className="gnode-timestamps">
+            <span className="gnode-ts-label">Created</span>
+            <span className="gnode-ts-val">{node.created}</span>
+            <span className="gnode-ts-label" style={{ marginLeft: 16 }}>Edited</span>
+            <span className="gnode-ts-val">{node.edited}</span>
+          </div>
+        </div>
+
+        {node.files.length > 0 && (
+          <div
+            className="gnode-files"
+            style={{
+              maxHeight: expanded ? `${node.files.length * (FILE_H + 6) + 20}px` : "0px",
+              opacity: expanded ? 1 : 0,
+              overflow: "hidden",
+              transition: "max-height 280ms ease-out, opacity 200ms ease-out",
+            }}
+          >
+            <div style={{ height: 12 }} />
+            {node.files.map((file) => (
+              <div
+                key={file.id}
+                className={`gnode-file-row ${selectedFile?.id === file.id ? "gnode-file-selected" : ""}`}
+                onClick={(e) => { e.stopPropagation(); onFileClick(file); }}
+              >
+                <FileIcon type={file.icon} />
+                <span className="gnode-file-name">{file.name}</span>
+                {file.badge && <span className="gnode-file-badge">{file.badge}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="gnode-connector" />
+    </div>
+  );
+}
+
+// ─── Bottom panel ─────────────────────────────────────────────────────────────
+function BottomPanel({ file, onClose }) {
+  const [tab, setTab] = useState("code");
+  const [expanded, setExpanded] = useState({});
+
+  return (
+    <div className="bottom-panel">
+      <div className="bp-header">
+        <div className="bp-tabs">
+          <button
+            className={`bp-tab ${tab === "code" ? "bp-tab-active" : ""}`}
+            onClick={() => setTab("code")}
+          >
+            CODE COMPARISON
+          </button>
+          <button
+            className={`bp-tab ${tab === "agent" ? "bp-tab-active" : ""}`}
+            onClick={() => setTab("agent")}
+          >
+            AGENT REASONING
+          </button>
+        </div>
+        <div className="bp-actions">
+          <button className="bp-icon-btn">+</button>
+          <button className="bp-icon-btn">
+            <svg viewBox="0 0 14 14" fill="none" width="11" height="11">
+              <rect x="1" y="1" width="5" height="12" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+              <rect x="8" y="1" width="5" height="12" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+            </svg>
+          </button>
+          <button className="bp-icon-btn">
+            <svg viewBox="0 0 14 14" fill="none" width="11" height="11">
+              <path d="M2 7h10M7 2v10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+          </button>
+          <button className="bp-icon-btn">
+            <svg viewBox="0 0 14 14" fill="none" width="11" height="11">
+              <path d="M7 10V4M4 7l3-3 3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <button className="bp-icon-btn" onClick={onClose}>✕</button>
+        </div>
+      </div>
+
+      {tab === "code" && (
+        <div className="bp-body">
+          <div className="bp-filetree">
+            <div className="bpft-row">
+              <svg viewBox="0 0 10 10" fill="none" width="8" height="8" style={{ marginRight: 4, color: "#63b3ed" }}>
+                <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+              <svg viewBox="0 0 14 14" fill="none" width="12" height="12" style={{ marginRight: 5, color: "#f5a442" }}>
+                <path d="M2 3h4l1 1h5v8H2V3z" stroke="currentColor" strokeWidth="1.1"/>
+              </svg>
+              <span className="bpft-name">pom.xml</span>
+            </div>
+            <div className="bpft-row bpft-child">
+              <svg viewBox="0 0 10 10" fill="none" width="8" height="8" style={{ marginRight: 4, color: "#63b3ed" }}>
+                <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+              <svg viewBox="0 0 14 14" fill="none" width="12" height="12" style={{ marginRight: 5, color: "#7a849e" }}>
+                <path d="M2 3h4l1 1h5v8H2V3z" stroke="currentColor" strokeWidth="1.1"/>
+              </svg>
+              <span className="bpft-name bpft-dim">...\..\upgradeSpringBoot</span>
+            </div>
+          </div>
+
+          <div className="bp-summary">
+            2 version bumps · 1 namespace rename
+          </div>
+
+          <button className="bp-show-diff" onClick={() => setExpanded(p => ({ ...p, all: !p.all }))}>
+            {expanded.all ? "− Hide full diff" : "+ Show full diff"}
+          </button>
+
+          {expanded.all && (
+            <div className="bp-diff">
+              {DIFF_LINES.map((line, i) => {
+                if (line.type === "collapsed") {
+                  return (
+                    <div
+                      key={i}
+                      className="diff-collapsed-row"
+                      onClick={() => setExpanded(p => ({ ...p, [i]: !p[i] }))}
+                    >
+                      <span style={{ marginRight: 8, color: "#63b3ed" }}>›</span>
+                      {line.label}
+                    </div>
+                  );
+                }
+                const bg =
+                  line.type === "removed" ? "rgba(248,113,113,0.07)" :
+                  line.type === "added"   ? "rgba(74,222,153,0.07)"  : "transparent";
+                const prefix =
+                  line.type === "removed" ? "-" :
+                  line.type === "added"   ? "+" : " ";
+                const prefixColor =
+                  line.type === "removed" ? "#f87171" :
+                  line.type === "added"   ? "#4ade99" : "transparent";
+                const borderLeft =
+                  line.type === "removed" ? "2px solid rgba(248,113,113,0.4)" :
+                  line.type === "added"   ? "2px solid rgba(74,222,153,0.4)"  : "2px solid transparent";
+
+                return (
+                  <div key={i} className="diff-row" style={{ background: bg, borderLeft }}>
+                    <span className="diff-ln">{line.ln}</span>
+                    <span className="diff-prefix" style={{ color: prefixColor }}>{prefix}</span>
+                    <span className="diff-code"><XmlToken text={line.content} /></span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "agent" && (
+        <div className="bp-body bp-agent">
+          <div className="agent-header">Why the agent changed this</div>
+          <p className="agent-text">
+            Spring Boot 3.x migrated from <code>javax.persistence</code> to{" "}
+            <code>jakarta.persistence</code> as part of the Java EE → Jakarta EE transition.
+            Both version bumps are required — the Spring Boot parent POM and the persistence
+            API must be updated together or the build will fail.
+          </p>
+          <div className="agent-affects">
+            <div className="agent-affects-label">What this affects</div>
+            {["UserEntity.java → javax → jakarta import update required",
+              "OrderEntity.java → javax → jakarta import update required",
+              "persistence.xml → namespace migration required"].map((item, i) => {
+              const [file, reason] = item.split(" → ");
+              return (
+                <div key={i} className="agent-affect-row">
+                  <span style={{ color: "#63b3ed" }}>→</span>
+                  <span className="agent-affect-file">{file}</span>
+                  <span className="agent-affect-reason">{reason}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Graph canvas with SVG edge ───────────────────────────────────────────────
+function GraphCanvas({ expandedNode, selectedFile, onExpandNode, onFileClick }) {
+  const NODE_W = 310;
+  const BASE_H = 110;
+  const FILE_H = 44;
+
+  const n1 = NODES[0], n2 = NODES[1];
+
+  const n1H = expandedNode === n1.id
+    ? BASE_H + 20 + n1.files.length * (FILE_H + 6)
+    : BASE_H;
+
+  const x1 = n1.x + NODE_W;
+  const y1 = n1.y + n1H / 2;
+  const x2 = n2.x;
+  const y2 = n2.y + BASE_H / 2;
+  const mx = (x1 + x2) / 2;
+
+  return (
+    <div className="graph-canvas-wrap">
+      <svg
+        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", overflow: "visible" }}
+      >
         <defs>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2.5" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          <filter id="glow2">
+            <feGaussianBlur stdDeviation="2" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
         </defs>
-
-        {/* Edges */}
-        {EDGES.map((e, i) => {
-          const from = getNode(e.from);
-          const to   = getNode(e.to);
-          const x1 = cx(from), y1 = cy(from);
-          const x2 = cx(to),   y2 = cy(to);
-          const mx = (x1 + x2) / 2;
-          const lit = selectedNode === e.from || selectedNode === e.to;
-          return (
-            <path key={i}
-              d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
-              fill="none"
-              stroke={lit ? "rgba(99,179,237,0.45)" : "rgba(99,179,237,0.1)"}
-              strokeWidth={lit ? "1.5" : "1"}
-              filter={lit ? "url(#glow)" : undefined}
-              style={{ transition: "stroke 0.2s, stroke-width 0.2s" }}
-            />
-          );
-        })}
-
-        {/* Connector dots */}
-        {GRAPH_NODES.map((n) => (
-          <circle key={`dot-${n.id}`} cx={cx(n)} cy={cy(n)} r="4"
-            fill={selectedNode === n.id ? "rgba(99,179,237,0.6)" : "none"}
-            stroke={selectedNode === n.id ? "rgba(99,179,237,0.9)" : "rgba(99,179,237,0.22)"}
-            strokeWidth="1.5"
-            style={{ transition: "all 0.2s" }}
-          />
-        ))}
-
-        {/* Nodes */}
-        {GRAPH_NODES.map((n) => {
-          const sel = selectedNode === n.id;
-          return (
-            <foreignObject key={n.id} x={n.x - NODE_W - 10} y={n.y} width={NODE_W} height={NODE_H + 24}>
-              <div className={`graph-node ${sel ? "graph-node-selected" : ""}`} onClick={() => onSelectNode(n.id)}>
-                <div className="graph-node-top">
-                  <span className="graph-node-title">{n.title}</span>
-                  {n.risk && <span className="tag tag-risk">{n.risk}</span>}
-                  {n.step && <span className="tag tag-step">{n.step}</span>}
-                </div>
-                <div className="graph-node-detail">{n.detail}</div>
-                <button className="graph-node-link">↗ View detail</button>
-              </div>
-            </foreignObject>
-          );
-        })}
+        <path
+          d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
+          fill="none"
+          stroke="rgba(99,179,237,0.5)"
+          strokeWidth="1.5"
+          style={{ transition: "d 300ms ease-out" }}
+        />
+        <circle cx={x1} cy={y1} r="5" fill="#1a1d2e" stroke="rgba(99,179,237,0.6)" strokeWidth="1.5"/>
       </svg>
+
+      {NODES.map((node) => (
+        <GraphNode
+          key={node.id}
+          node={node}
+          expanded={expandedNode === node.id}
+          selectedFile={selectedFile}
+          onExpand={onExpandNode}
+          onFileClick={onFileClick}
+        />
+      ))}
     </div>
   );
 }
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
-export default function Dashboard() {
-  const [activeSession, setActiveSession] = useState("s3");
-  const [expandedSess, setExpandedSess]   = useState({ s3: true, s1: true });
+export default function JavaAIDashboard() {
+  const [expandedSess, setExpandedSess] = useState({ s3: true, s1: true });
   const [selectedIntent, setSelectedIntent] = useState("i1");
-  const [selectedNode, setSelectedNode]   = useState("g2");
-  const [search, setSearch]               = useState("");
-  const [atomicNodes, setAtomicNodes]     = useState(5);
-  const [discardAll, setDiscardAll]       = useState(false);
-  const [mounted, setMounted]             = useState(false);
+  const [expandedNode, setExpandedNode] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [bottomOpen, setBottomOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { setTimeout(() => setMounted(true), 50); }, []);
+  useEffect(() => { setTimeout(() => setMounted(true), 40); }, []);
 
-  const toggleSession = (id) =>
-    setExpandedSess((prev) => ({ ...prev, [id]: !prev[id] }));
+  const handleNodeExpand = (id) => {
+    setExpandedNode(id);
+    setSelectedFile(null);
+    setBottomOpen(false);
+  };
 
-  const filteredSections = INTENT_SECTIONS
-    .map((sec) => ({
-      ...sec,
-      items: sec.items.filter(
-        (item) =>
-          item.title.toLowerCase().includes(search.toLowerCase()) ||
-          item.user.toLowerCase().includes(search.toLowerCase())
-      ),
-    }))
-    .filter((sec) => sec.items.length > 0);
+  const handleFileClick = (file) => {
+    setSelectedFile(file);
+    setBottomOpen(true);
+  };
+
+  const handleCloseBottom = () => {
+    setBottomOpen(false);
+    setSelectedFile(null);
+  };
+
+  const TAG_COLORS = {
+    "Bug fix":       { bg: "rgba(248,113,113,0.15)", color: "#f87171", border: "rgba(248,113,113,0.25)" },
+    "API change":    { bg: "rgba(99,179,237,0.12)",  color: "#63b3ed", border: "rgba(99,179,237,0.25)" },
+    "Schema change": { bg: "rgba(167,139,250,0.12)", color: "#a78bfa", border: "rgba(167,139,250,0.25)" },
+    "Cross-module":  { bg: "rgba(255,255,255,0.06)", color: "#7a849e", border: "rgba(255,255,255,0.1)" },
+  };
 
   return (
-    <div className={`app ${mounted ? "app-mounted" : ""}`}>
-
+    <div className={`app ${mounted ? "app-in" : ""}`}>
       {/* ── Sidebar ── */}
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <svg className="logo-icon" viewBox="0 0 18 18" fill="none">
-            <rect x="1" y="1" width="7" height="7" rx="1.5" fill="currentColor" opacity="0.9"/>
-            <rect x="10" y="1" width="7" height="7" rx="1.5" fill="currentColor" opacity="0.5"/>
-            <rect x="1" y="10" width="7" height="7" rx="1.5" fill="currentColor" opacity="0.5"/>
-            <rect x="10" y="10" width="7" height="7" rx="1.5" fill="currentColor" opacity="0.22"/>
+          <svg viewBox="0 0 18 18" fill="none" width="16" height="16">
+            <rect x="1" y="1" width="7" height="7" rx="1.5" fill="#63b3ed" opacity="0.9"/>
+            <rect x="10" y="1" width="7" height="7" rx="1.5" fill="#63b3ed" opacity="0.5"/>
+            <rect x="1" y="10" width="7" height="7" rx="1.5" fill="#63b3ed" opacity="0.5"/>
+            <rect x="10" y="10" width="7" height="7" rx="1.5" fill="#63b3ed" opacity="0.2"/>
           </svg>
           <span className="logo-text">JavaAI</span>
         </div>
 
-        {/* In Progress session */}
-        {[SESSIONS[0]].map((sess) => (
-          <div key={sess.id} className="session-group">
-            <div className="section-label">
-              <span className="pip pip-green" />In Progress
-            </div>
+        {SESSIONS.map((sess) => (
+          <div key={sess.id} className="sess-group">
+            <div className="sess-section-label">{sess.label}</div>
             <div
-              className={`session-header ${activeSession === sess.id ? "active" : ""}`}
-              onClick={() => { setActiveSession(sess.id); toggleSession(sess.id); }}
+              className={`sess-header`}
+              onClick={() => setExpandedSess(p => ({ ...p, [sess.id]: !p[sess.id] }))}
             >
-              <span className={`chevron ${expandedSess[sess.id] ? "open" : ""}`}>›</span>
-              <span className="session-name">{sess.name}</span>
-              <span className="tag tag-risk">{sess.risk}</span>
-              <span className="tag tag-fixed">{sess.errorsFixed} fixed</span>
+              <span className={`sess-chevron ${expandedSess[sess.id] ? "open" : ""}`}>›</span>
+              <span className="sess-name">{sess.name}</span>
+              <div className="sess-badges">
+                {sess.badges.map((b, i) => (
+                  <span key={i} className={`sbadge sbadge-${b.variant}`}>{b.text}</span>
+                ))}
+              </div>
             </div>
+
             {expandedSess[sess.id] && (
-              <div className="run-list">
+              <div className="sess-runs">
                 {sess.runs.map((run) => (
                   <div key={run.id}>
-                    <div className="run-item">
-                      <PulseRing />
+                    <div className="run-row">
+                      <SpinnerIcon />
                       <span className="run-user">{run.user}</span>
                       <span className="run-time">{run.time}</span>
                     </div>
-                    {run.sub?.map((s, i) => (
-                      <div key={i} className="run-sub">
-                        <span className="sub-line" />{s}
-                      </div>
+                    {run.subs?.map((s, i) => (
+                      <div key={i} className="run-sub">{s}</div>
                     ))}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* Completed session */}
-        {[SESSIONS[1]].map((sess) => (
-          <div key={sess.id} className="session-group">
-            <div className="section-label">
-              <span className="pip pip-dim" />Completed
-            </div>
-            <div
-              className={`session-header ${activeSession === sess.id ? "active" : ""}`}
-              onClick={() => { setActiveSession(sess.id); toggleSession(sess.id); }}
-            >
-              <span className={`chevron ${expandedSess[sess.id] ? "open" : ""}`}>›</span>
-              <span className="session-name">{sess.name}</span>
-              <span className="tag tag-risk">{sess.risk}</span>
-              <span className="tag tag-fixed">{sess.errorsFixed} fixed</span>
-            </div>
-            {expandedSess[sess.id] && (
-              <div className="run-list">
-                {sess.runs.map((run) => (
-                  <div key={run.id} className="run-item">
-                    <span className="done-dot" />
-                    <span className="run-user">{run.user}</span>
-                    <span className="run-time">{run.time}</span>
                   </div>
                 ))}
               </div>
@@ -238,42 +492,33 @@ export default function Dashboard() {
 
       {/* ── Center panel ── */}
       <section className="center-panel">
-        <div className="panel-header">
-          <span className="panel-title">Intent Graph</span>
-          <div className="header-right">
-            <span className="header-meta">5 active</span>
-            <button
-              className={`btn-discard ${discardAll ? "btn-discard-done" : ""}`}
-              onClick={() => setDiscardAll(!discardAll)}
-            >
-              {discardAll ? "✓ Discarded" : "Discard all"}
-            </button>
-          </div>
+        <div className="cp-header">
+          <span className="cp-title">Prompt</span>
+          <button className="cp-discard">+ Discard all</button>
         </div>
 
-        <div className="search-row">
-          <svg className="search-icon" viewBox="0 0 16 16" fill="none" width="14" height="14">
-            <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" strokeWidth="1.3"/>
-            <path d="M10 10l3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+        <div className="cp-search">
+          <svg viewBox="0 0 16 16" fill="none" width="14" height="14" style={{ color: "#7a849e", flexShrink: 0 }}>
+            <path d="M2 2l3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            <rect x="4" y="1" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.2"/>
           </svg>
-          <input
-            className="search-input"
-            placeholder="Search intents…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <button className="search-clear" onClick={() => setSearch("")}>✕</button>
-          )}
+          <input className="cp-search-input" placeholder="Search prompts..." />
+          <button className="cp-search-btn">
+            <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+              <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" strokeWidth="1.3"/>
+              <path d="M10 10l3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+          </button>
         </div>
 
-        <div className="intent-list">
-          {filteredSections.map((sec) => (
+        <div className="cp-list">
+          {INTENT_SECTIONS.map((sec) => (
             <div key={sec.label}>
-              <div className="section-divider">
-                <span className="divider-dot" />
+              <div className="cp-section-label">
+                <svg viewBox="0 0 10 10" fill="none" width="9" height="9">
+                  <path d="M2 3l3 3 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                </svg>
                 {sec.label}
-                <span className="divider-count">{sec.items.length}</span>
               </div>
               {sec.items.map((item) => (
                 <div
@@ -281,21 +526,23 @@ export default function Dashboard() {
                   className={`intent-card ${selectedIntent === item.id ? "intent-card-sel" : ""}`}
                   onClick={() => setSelectedIntent(item.id)}
                 >
-                  <div className="intent-top">
-                    <div className="intent-title-row">
-                      <span className={`intent-dot ${selectedIntent === item.id ? "dot-on" : ""}`} />
-                      <span className="intent-title">{item.title}</span>
-                    </div>
-                    <div className="intent-tags">
-                      <span className="tag tag-count">{item.intents} intent</span>
-                      <span className="tag tag-api">{item.type}</span>
+                  <div className="ic-top">
+                    <span className="ic-title">{item.title}</span>
+                    <div className="ic-tags">
+                      {item.tags.map((tag, i) => {
+                        const s = TAG_COLORS[tag] || TAG_COLORS["Cross-module"];
+                        return (
+                          <span key={i} className="ic-tag" style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>
+                            {tag}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
-                  <div className="intent-bottom">
-                    <span className="intent-user">{item.user}</span>
-                    <span className="sep">·</span>
-                    <span className="intent-changes">{item.changes} changes</span>
-                    <span className="intent-time">{item.time}</span>
+                  <div className="ic-bottom">
+                    <span className="ic-user">{item.user}</span>
+                    <span className="ic-meta">{item.meta}</span>
+                    <span className="ic-time">{item.time}</span>
                   </div>
                 </div>
               ))}
@@ -304,82 +551,92 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* ── Right graph panel ── */}
+      {/* ── Right panel ── */}
       <section className="right-panel">
-        <div className="panel-header">
-          <span className="panel-title">Semantic Dependency View</span>
-          <div className="graph-actions">
-            <button className="icon-btn" title="Bookmark">
-              <svg viewBox="0 0 14 14" fill="none" width="12" height="12">
-                <path d="M2 2h10v10.5L7 9.5 2 12.5V2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <button className="atomic-btn" onClick={() => setAtomicNodes((n) => Math.max(1, n - 1))}>
-              {atomicNodes} atomic nodes
-            </button>
-            <button className="icon-btn" title="Expand">
-              <svg viewBox="0 0 14 14" fill="none" width="12" height="12">
-                <path d="M8.5 1.5H12.5V5.5M5.5 12.5H1.5V8.5M12.5 8.5V12.5H8.5M1.5 5.5V1.5H5.5"
-                  stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <button className="icon-btn" title="Close">
-              <svg viewBox="0 0 14 14" fill="none" width="11" height="11">
-                <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-              </svg>
-            </button>
+        <div className="rp-header">
+          <span className="rp-title">Semantic Intent Graph</span>
+          <div className="rp-header-actions">
+            <button className="rp-icon-btn">☆</button>
+            <button className="rp-intent-count">+ 5 Intent</button>
+            <button className="rp-icon-btn">⤢</button>
+            <button className="rp-icon-btn">✕</button>
           </div>
         </div>
-        <GraphPanel selectedNode={selectedNode} onSelectNode={setSelectedNode} />
+
+        <div className="rp-body">
+          <div
+            className="rp-graph"
+            style={{
+              flex: bottomOpen ? "0 0 auto" : "1",
+              height: bottomOpen ? "55%" : "100%",
+              transition: "height 300ms ease-out",
+            }}
+          >
+            <GraphCanvas
+              expandedNode={expandedNode}
+              selectedFile={selectedFile}
+              onExpandNode={handleNodeExpand}
+              onFileClick={handleFileClick}
+            />
+          </div>
+
+          <div
+            className="rp-bottom-wrap"
+            style={{
+              height: bottomOpen ? "45%" : "0px",
+              opacity: bottomOpen ? 1 : 0,
+              overflow: "hidden",
+              transition: "height 300ms ease-out, opacity 200ms ease-out",
+              borderTop: bottomOpen ? "1px solid rgba(255,255,255,0.07)" : "none",
+            }}
+          >
+            {selectedFile && (
+              <BottomPanel file={selectedFile} onClose={handleCloseBottom} />
+            )}
+          </div>
+        </div>
       </section>
 
-      {/* ── Styles ── */}
+      {/* ── Global styles ── */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;500;600&display=swap');
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-          --bg:          #0c0d12;
-          --bg-side:     #09090e;
-          --bg-panel:    #0d0e15;
-          --bg-card:     #131520;
-          --bg-card-sel: #171a28;
-          --border:      rgba(255,255,255,0.055);
-          --border-hi:   rgba(255,255,255,0.09);
-          --border-sel:  rgba(99,179,237,0.3);
-          --text:        #c4ccdf;
-          --text-mid:    #7a849e;
-          --text-dim:    #444a60;
-          --accent:      #63b3ed;
-          --accent-bg:   rgba(99,179,237,0.12);
-          --green:       #4ade99;
-          --green-bg:    rgba(74,222,153,0.1);
-          --red:         #f87171;
-          --red-bg:      rgba(248,113,113,0.1);
-          --mono:        'IBM Plex Mono', monospace;
-          --sans:        'Syne', sans-serif;
+          --bg:       #13151f;
+          --bg-side:  #0e1018;
+          --bg-panel: #13151f;
+          --bg-card:  #1c1f2e;
+          --bg-card2: #1a1d2e;
+          --bg-sel:   #1f2335;
+          --border:   rgba(255,255,255,0.07);
+          --border-hi:rgba(255,255,255,0.11);
+          --text:     #c8d0e4;
+          --text-mid: #7a849e;
+          --text-dim: #444a60;
+          --accent:   #63b3ed;
+          --green:    #4ade99;
+          --red:      #f87171;
+          --mono:     'IBM Plex Mono', monospace;
+          --sans:     'Syne', sans-serif;
         }
 
-        body { background: var(--bg); }
+        html, body { margin: 0; padding: 0; background: var(--bg); }
+        button { font-family: var(--sans); cursor: pointer; }
 
         .app {
-          display: flex;
-          height: 100vh;
-          width: 100%;
-          background: var(--bg);
-          font-family: var(--sans);
-          color: var(--text);
-          overflow: hidden;
-          opacity: 0;
-          transform: translateY(5px);
-          transition: opacity 0.3s ease, transform 0.3s ease;
+          display: flex; height: 100vh; width: 100vw;
+          background: var(--bg); font-family: var(--sans);
+          color: var(--text); overflow: hidden;
+          opacity: 0; transition: opacity 0.3s ease;
         }
-        .app-mounted { opacity: 1; transform: translateY(0); }
+        .app-in { opacity: 1; }
 
         /* ── Sidebar ── */
         .sidebar {
-          width: 234px; min-width: 234px;
+          width: 232px; min-width: 232px;
           background: var(--bg-side);
           border-right: 1px solid var(--border);
           display: flex; flex-direction: column;
@@ -388,342 +645,364 @@ export default function Dashboard() {
         .sidebar::-webkit-scrollbar { display: none; }
 
         .sidebar-logo {
-          display: flex; align-items: center; gap: 10px;
-          padding: 20px 18px 16px;
-          border-bottom: 1px solid var(--border);
-          margin-bottom: 6px;
-        }
-        .logo-icon { width: 18px; height: 18px; color: var(--accent); flex-shrink: 0; }
-        .logo-text {
-          font-family: var(--sans); font-size: 13px; font-weight: 600;
-          color: #e0e6f5; letter-spacing: 0.08em; text-transform: uppercase;
-        }
-
-        .session-group { padding: 2px 0 8px; }
-
-        .section-label {
-          display: flex; align-items: center; gap: 7px;
-          font-size: 10px; font-weight: 500; letter-spacing: 0.1em;
-          text-transform: uppercase; color: var(--text-dim);
-          padding: 12px 18px 6px;
-          font-family: var(--mono);
-        }
-        .pip { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-        .pip-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
-        .pip-dim   { background: var(--text-dim); }
-
-        .session-header {
-          display: flex; align-items: center; gap: 7px;
-          padding: 7px 12px; cursor: pointer;
-          border-radius: 7px; margin: 0 8px;
-          transition: background 0.15s;
-        }
-        .session-header:hover { background: rgba(255,255,255,0.03); }
-        .session-header.active { background: rgba(255,255,255,0.04); }
-
-        .chevron {
-          font-size: 14px; color: var(--text-dim);
-          width: 14px; flex-shrink: 0;
-          transition: transform 0.2s ease;
-          display: inline-block; transform: rotate(0deg);
-        }
-        .chevron.open { transform: rotate(90deg); }
-
-        .session-name {
-          font-size: 12.5px; font-weight: 500; color: var(--text);
-          flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-
-        /* Tags */
-        .tag {
-          font-size: 10px; padding: 2px 7px; border-radius: 4px;
-          font-weight: 500; letter-spacing: 0.02em; white-space: nowrap;
-          font-family: var(--mono); flex-shrink: 0;
-        }
-        .tag-risk  { background: var(--red-bg);   color: var(--red);   border: 1px solid rgba(248,113,113,0.2); }
-        .tag-fixed { background: var(--green-bg);  color: var(--green); border: 1px solid rgba(74,222,153,0.2); }
-        .tag-count { background: rgba(255,255,255,0.04); color: var(--text-mid); border: 1px solid var(--border); }
-        .tag-api   { background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(99,179,237,0.2); }
-        .tag-step  { background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(99,179,237,0.2); }
-
-        /* Run list */
-        .run-list { padding: 2px 0 4px; }
-
-        .run-item {
           display: flex; align-items: center; gap: 9px;
-          padding: 5px 16px 5px 30px;
-          cursor: pointer; font-size: 11.5px; color: var(--text-mid);
-          transition: background 0.1s;
+          padding: 18px 16px 14px;
+          border-bottom: 1px solid var(--border);
+          margin-bottom: 4px;
         }
-        .run-item:hover { background: rgba(255,255,255,0.025); }
-
-        /* Pulse ring animation */
-        .pulse-ring {
-          position: relative; width: 8px; height: 8px; flex-shrink: 0;
-        }
-        .pulse-core {
-          position: absolute; inset: 1px;
-          border-radius: 50%; background: var(--accent);
-        }
-        .pulse-ring::before {
-          content: ''; position: absolute; inset: -2px;
-          border-radius: 50%; border: 1.5px solid var(--accent);
-          opacity: 0; animation: pulse 2s ease-out infinite;
-        }
-        @keyframes pulse {
-          0%   { transform: scale(0.8); opacity: 0.7; }
-          100% { transform: scale(2.4); opacity: 0; }
+        .logo-text {
+          font-size: 14px; font-weight: 600; color: #e0e6f5;
+          letter-spacing: 0.06em; text-transform: uppercase;
         }
 
-        .done-dot {
-          width: 6px; height: 6px; border-radius: 50%;
-          background: var(--text-dim); flex-shrink: 0; margin: 0 1px;
+        .sess-group { padding: 2px 0 6px; }
+        .sess-section-label {
+          font-family: var(--mono); font-size: 10px; font-weight: 500;
+          letter-spacing: 0.1em; text-transform: uppercase;
+          color: var(--text-dim); padding: 10px 16px 4px;
         }
-
-        .run-user {
-          flex: 1; font-family: var(--mono); font-size: 10.5px;
-          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        .sess-header {
+          display: flex; align-items: center; gap: 6px;
+          padding: 6px 10px; border-radius: 6px; margin: 0 6px;
+          cursor: pointer; transition: background 0.15s; flex-wrap: wrap;
         }
-        .run-time { font-size: 10px; color: var(--text-dim); margin-left: auto; font-family: var(--mono); flex-shrink: 0; }
+        .sess-header:hover { background: rgba(255,255,255,0.04); }
+        .sess-chevron {
+          font-size: 14px; color: var(--text-dim);
+          transition: transform 0.2s; display: inline-block;
+        }
+        .sess-chevron.open { transform: rotate(90deg); }
+        .sess-name { font-size: 13px; font-weight: 500; color: var(--text); flex: 1; }
+        .sess-badges { display: flex; gap: 4px; flex-wrap: wrap; }
 
+        .sbadge {
+          font-family: var(--mono); font-size: 10px; padding: 2px 7px;
+          border-radius: 4px; font-weight: 500; white-space: nowrap;
+        }
+        .sbadge-risk  { background: rgba(248,113,113,0.14); color: var(--red);   border: 1px solid rgba(248,113,113,0.2); }
+        .sbadge-fixed { background: rgba(74,222,153,0.1);   color: var(--green); border: 1px solid rgba(74,222,153,0.2); }
+
+        .sess-runs { padding: 2px 0 4px; }
+        .run-row {
+          display: flex; align-items: center; gap: 7px;
+          padding: 4px 16px 4px 28px; font-size: 11.5px; color: var(--text-mid);
+          transition: background 0.1s; cursor: pointer;
+        }
+        .run-row:hover { background: rgba(255,255,255,0.03); }
+        .run-user { flex: 1; font-family: var(--mono); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .run-time { font-family: var(--mono); font-size: 10px; color: var(--text-dim); flex-shrink: 0; }
         .run-sub {
-          display: flex; align-items: center; gap: 8px;
-          padding: 3px 16px 3px 44px;
-          font-size: 10.5px; color: var(--text-dim);
-          font-family: var(--mono); cursor: pointer;
-          transition: color 0.12s;
+          padding: 2px 16px 2px 42px;
+          font-family: var(--mono); font-size: 10.5px; color: var(--text-dim);
+          cursor: pointer;
         }
         .run-sub:hover { color: var(--text-mid); }
-        .sub-line { width: 10px; flex-shrink: 0; border-top: 1px solid var(--border-hi); }
 
-        /* Panel header */
-        .panel-header {
-          display: flex; align-items: center;
-          padding: 0 20px; height: 52px;
-          border-bottom: 1px solid var(--border);
-          gap: 12px; flex-shrink: 0;
-        }
-        .panel-title {
-          font-size: 11px; font-weight: 500; color: #d0d8ec;
-          letter-spacing: 0.08em; text-transform: uppercase;
-          font-family: var(--mono);
-        }
-
-        /* Center panel */
+        /* ── Center panel ── */
         .center-panel {
-          width: 350px; min-width: 300px;
+          width: 370px; min-width: 340px;
           border-right: 1px solid var(--border);
           display: flex; flex-direction: column;
           background: var(--bg-panel); overflow: hidden;
         }
 
-        .header-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-        .header-meta { font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
-
-        .btn-discard {
-          font-family: var(--mono); font-size: 10.5px;
-          padding: 5px 12px; border-radius: 6px;
+        .cp-header {
+          display: flex; align-items: center;
+          padding: 0 18px; height: 52px;
+          border-bottom: 1px solid var(--border);
+          flex-shrink: 0;
+        }
+        .cp-title { font-size: 14px; font-weight: 500; color: #d0d8ec; }
+        .cp-discard {
+          margin-left: auto;
           background: transparent; border: 1px solid var(--border-hi);
-          color: var(--text-mid); cursor: pointer;
-          transition: all 0.15s; letter-spacing: 0.04em;
+          color: var(--text-mid); font-family: var(--mono); font-size: 11px;
+          padding: 5px 12px; border-radius: 6px; letter-spacing: 0.03em;
+          transition: all 0.15s;
         }
-        .btn-discard:hover { background: rgba(255,255,255,0.04); color: var(--text); }
-        .btn-discard-done { border-color: rgba(74,222,153,0.3); color: var(--green); background: var(--green-bg); }
+        .cp-discard:hover { background: rgba(255,255,255,0.04); color: var(--text); }
 
-        .search-row {
-          display: flex; align-items: center; gap: 9px;
-          padding: 10px 16px; border-bottom: 1px solid var(--border);
-          flex-shrink: 0; background: rgba(255,255,255,0.01);
+        .cp-search {
+          display: flex; align-items: center; gap: 10px;
+          padding: 10px 14px; border-bottom: 1px solid var(--border);
+          flex-shrink: 0;
         }
-        .search-icon { color: var(--text-dim); flex-shrink: 0; }
-        .search-input {
+        .cp-search-input {
           flex: 1; background: transparent; border: none; outline: none;
-          font-family: var(--sans); font-size: 12.5px; color: var(--text);
-          min-width: 0;
+          font-family: var(--sans); font-size: 13px; color: var(--text);
         }
-        .search-input::placeholder { color: var(--text-dim); }
-        .search-clear {
-          background: transparent; border: none; color: var(--text-dim);
-          cursor: pointer; font-size: 11px; padding: 2px 4px; border-radius: 4px;
-          transition: color 0.12s;
+        .cp-search-input::placeholder { color: var(--text-dim); }
+        .cp-search-btn {
+          background: transparent; border: 1px solid var(--border-hi);
+          color: var(--text-dim); padding: 5px 8px; border-radius: 5px;
+          transition: all 0.12s;
         }
-        .search-clear:hover { color: var(--text); }
+        .cp-search-btn:hover { background: rgba(255,255,255,0.04); color: var(--text); }
 
-        .intent-list {
+        .cp-list {
           flex: 1; overflow-y: auto; padding: 8px 0 16px;
           scrollbar-width: none;
         }
-        .intent-list::-webkit-scrollbar { display: none; }
+        .cp-list::-webkit-scrollbar { display: none; }
 
-        .section-divider {
-          display: flex; align-items: center; gap: 8px;
-          padding: 12px 16px 7px;
-          font-size: 10.5px; font-weight: 500; color: var(--text-dim);
-          letter-spacing: 0.07em; text-transform: uppercase;
-          font-family: var(--mono);
-        }
-        .divider-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
-        .divider-count {
-          margin-left: auto; font-size: 10px;
-          background: rgba(255,255,255,0.04); padding: 1px 7px;
-          border-radius: 10px; border: 1px solid var(--border);
+        .cp-section-label {
+          display: flex; align-items: center; gap: 6px;
+          padding: 10px 14px 6px;
+          font-size: 12px; font-weight: 500; color: var(--text-mid);
+          letter-spacing: 0.02em;
         }
 
         .intent-card {
-          margin: 2px 10px; padding: 11px 13px;
-          border-radius: 7px; border: 1px solid transparent;
-          cursor: pointer; transition: background 0.13s, border-color 0.13s, box-shadow 0.13s;
-          background: var(--bg-card);
+          margin: 2px 10px; padding: 12px 13px;
+          border-radius: 8px; border: 1px solid transparent;
+          cursor: pointer; background: var(--bg-card);
+          transition: background 0.13s, border-color 0.13s;
           position: relative; overflow: hidden;
         }
         .intent-card::before {
           content: ''; position: absolute;
           left: 0; top: 0; bottom: 0; width: 2px;
-          background: transparent; transition: background 0.15s;
+          background: transparent; transition: background 0.13s;
         }
-        .intent-card:hover { background: var(--bg-card-sel); border-color: var(--border-hi); }
+        .intent-card:hover {
+          background: rgba(28,31,46, 0.8);
+          border-color: rgba(255,255,255,0.08);
+        }
         .intent-card-sel {
-          background: var(--bg-card-sel); border-color: var(--border-sel);
-          box-shadow: 0 0 0 1px rgba(99,179,237,0.06) inset, 0 4px 16px rgba(0,0,0,0.3);
+          background: var(--bg-sel);
+          border-color: rgba(99,179,237,0.3);
         }
-        .intent-card-sel::before { background: var(--accent); }
-
-        .intent-top {
-          display: flex; align-items: flex-start;
-          justify-content: space-between; gap: 8px; margin-bottom: 9px;
+        .intent-card-sel::before {
+          background: var(--accent);
         }
-        .intent-title-row { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
 
-        .intent-dot {
-          width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
-          background: var(--border-hi); border: 1px solid var(--border-hi);
-          transition: all 0.15s;
+        .ic-top {
+          display: flex; flex-direction: column; gap: 6px;
+          margin-bottom: 10px;
         }
-        .dot-on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 5px var(--accent); }
-
-        .intent-title {
-          font-size: 12.5px; font-weight: 500; color: #d0d8ec;
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        .ic-title {
+          font-size: 13.5px; font-weight: 500; color: #e0e6f5;
+          line-height: 1.4; word-break: break-word;
         }
-        .intent-tags { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; flex-shrink: 0; }
-
-        .intent-bottom {
-          display: flex; align-items: center; gap: 7px;
-          font-size: 10.5px; color: var(--text-dim);
-          font-family: var(--mono);
+        .ic-tags {
+          display: flex; gap: 6px; flex-wrap: wrap;
         }
-        .intent-user { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .sep { opacity: 0.3; }
-        .intent-changes { color: var(--text-dim); }
-        .intent-time { margin-left: auto; flex-shrink: 0; }
+        .ic-tag {
+          font-family: var(--mono); font-size: 9.5px;
+          padding: 2.5px 6px; border-radius: 4px;
+          letter-spacing: 0.02em; font-weight: 500;
+        }
 
-        /* Right panel */
+        .ic-bottom {
+          display: flex; align-items: center; justify-content: space-between;
+          font-family: var(--mono); font-size: 10.5px; color: var(--text-mid);
+        }
+        .ic-user { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 8px;}
+        .ic-meta { margin-right: 12px; }
+        .ic-time { color: var(--text-dim); flex-shrink: 0; }
+
+        /* ── Right panel (Graph & Bottom Panel) ── */
         .right-panel {
           flex: 1; display: flex; flex-direction: column;
-          background: var(--bg); overflow: hidden;
+          background: var(--bg-panel); overflow: hidden;
+          position: relative;
         }
 
-        .graph-actions { display: flex; align-items: center; gap: 5px; margin-left: auto; }
+        .rp-header {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 0 18px; height: 52px; border-bottom: 1px solid var(--border);
+          background: var(--bg-panel); z-index: 10; flex-shrink: 0;
+        }
+        .rp-title { font-size: 14px; font-weight: 500; color: #d0d8ec; }
+        .rp-header-actions { display: flex; align-items: center; gap: 8px; }
 
-        .icon-btn {
+        .rp-icon-btn, .bp-icon-btn {
           background: transparent; border: 1px solid var(--border-hi);
-          color: var(--text-dim); width: 28px; height: 28px;
-          border-radius: 6px; cursor: pointer;
+          color: var(--text-mid); padding: 5px 8px; border-radius: 6px;
           display: flex; align-items: center; justify-content: center;
-          transition: all 0.12s;
+          transition: all 0.15s; font-size: 12px; font-family: var(--mono);
         }
-        .icon-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); border-color: var(--border-sel); }
-
-        .atomic-btn {
-          background: transparent; border: 1px solid var(--border-hi);
-          color: var(--text-mid); padding: 5px 12px;
-          border-radius: 6px; cursor: pointer;
-          font-size: 11px; font-family: var(--mono);
-          letter-spacing: 0.04em; transition: all 0.12s;
+        .rp-icon-btn:hover, .bp-icon-btn:hover {
+          background: rgba(255,255,255,0.06); color: var(--text); border-color: rgba(255,255,255,0.15);
         }
-        .atomic-btn:hover { background: rgba(255,255,255,0.04); color: var(--text); }
-
-        /* Graph canvas */
-        .graph-canvas {
-          flex: 1; overflow: auto; padding: 24px 20px;
-          scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent;
-          background:
-            radial-gradient(ellipse 60% 40% at 70% 30%, rgba(99,179,237,0.03) 0%, transparent 70%),
-            var(--bg);
+        .rp-intent-count {
+          background: rgba(99,179,237,0.1); border: 1px solid rgba(99,179,237,0.25);
+          color: var(--accent); font-family: var(--mono); font-size: 11px; font-weight: 500;
+          padding: 5px 12px; border-radius: 6px; transition: all 0.15s;
+        }
+        .rp-intent-count:hover {
+          background: rgba(99,179,237,0.15); border-color: rgba(99,179,237,0.4);
         }
 
-        /* Graph nodes */
-        .graph-node {
-          background: var(--bg-card); border: 1px solid var(--border-hi);
-          border-radius: 9px; padding: 12px 14px; cursor: pointer;
-          transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
-          width: 100%; height: 100%;
-          display: flex; flex-direction: column; justify-content: space-between;
+        .rp-body {
+          flex: 1; display: flex; flex-direction: column;
+          position: relative; overflow: hidden;
         }
-        .graph-node:hover { border-color: rgba(99,179,237,0.25); background: var(--bg-card-sel); }
-        .graph-node-selected {
-          border-color: rgba(99,179,237,0.45); background: var(--bg-card-sel);
-          box-shadow: 0 0 0 1px rgba(99,179,237,0.1) inset, 0 6px 24px rgba(0,0,0,0.4);
+        .rp-graph {
+          position: relative; width: 100%;
+          background: radial-gradient(circle at center, rgba(30,34,50,0.3) 0%, transparent 70%);
+          overflow: auto; /* Enable panning */
+        }
+        .graph-canvas-wrap {
+          position: absolute; width: 1200px; height: 800px; /* Large canvas */
         }
 
-        .graph-node-top {
-          display: flex; align-items: center; gap: 6px;
-          margin-bottom: 5px; flex-wrap: wrap;
+        /* ── Graph Node ── */
+        .gnode-card {
+          background: var(--bg-card2); border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 8px; padding: 14px 16px; position: relative; z-index: 2;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s;
         }
-        .graph-node-title {
-          font-size: 11.5px; font-weight: 500; color: #d0d8ec;
-          flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        .gnode-card:hover { border-color: rgba(255,255,255,0.15); }
+        .gnode-expanded { border-color: rgba(99,179,237,0.4); box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(99,179,237,0.1); }
+        .gnode-expanded:hover { border-color: rgba(99,179,237,0.5); }
+
+        .gnode-connector {
+          position: absolute; right: -6px; top: 55px;
+          width: 12px; height: 12px; border-radius: 50%;
+          background: var(--bg-card2); border: 2px solid rgba(99,179,237,0.6);
+          z-index: 3;
         }
-        .graph-node-detail {
-          font-size: 10.5px; color: var(--text-mid);
-          font-family: var(--mono); margin-bottom: 5px; flex: 1;
+
+        .gnode-header {
+          display: flex; align-items: center; justify-content: space-between;
+          margin-bottom: 12px; gap: 8px; flex-wrap: wrap;
         }
-        .graph-node-link {
-          font-size: 10px; color: var(--text-dim);
-          background: transparent; border: none; cursor: pointer;
-          padding: 0; letter-spacing: 0.04em;
-          font-family: var(--mono); transition: color 0.12s; align-self: flex-start;
+        .gnode-title {
+          font-size: 13.5px; font-weight: 600; color: #e0e6f5; flex: 1;
         }
-        .graph-node-link:hover { color: var(--accent); }
+        .badge-branch {
+          background: rgba(167,139,250,0.12); color: #a78bfa; border: 1px solid rgba(167,139,250,0.25);
+          font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 4px;
+        }
+        .gnode-api {
+          color: var(--accent); font-family: var(--mono); font-size: 10.5px;
+        }
+
+        .gnode-meta {
+          display: flex; justify-content: space-between; align-items: center;
+          font-family: var(--mono); font-size: 10.5px; border-top: 1px solid var(--border);
+          padding-top: 10px;
+        }
+        .gnode-view-detail { color: var(--text-mid); cursor: pointer; transition: color 0.1s; }
+        .gnode-view-detail:hover { color: #e0e6f5; }
+        .gnode-timestamps { display: flex; gap: 6px; color: var(--text-dim); margin-left: auto; }
+        .gnode-ts-val { color: var(--text-mid); }
+
+        .gnode-files { border-top: 1px dashed rgba(255,255,255,0.08); margin-top: 10px; padding-top: 4px;}
+        .gnode-file-row {
+          display: flex; align-items: center; gap: 8px;
+          padding: 8px 10px; margin-bottom: 4px; border-radius: 6px;
+          background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04);
+          cursor: pointer; transition: all 0.15s;
+        }
+        .gnode-file-row:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+        .gnode-file-selected { background: rgba(99,179,237,0.08); border-color: rgba(99,179,237,0.3); }
+        .gnode-file-selected:hover { background: rgba(99,179,237,0.12); border-color: rgba(99,179,237,0.4); }
+
+        .gnode-file-name {
+          font-family: var(--mono); font-size: 11.5px; color: #d0d8ec; flex: 1;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .gnode-file-badge {
+          background: rgba(245,164,66,0.15); color: #f5a442;
+          font-family: var(--mono); font-size: 10px; font-weight: 600;
+          width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+          border-radius: 4px; border: 1px solid rgba(245,164,66,0.3);
+        }
+
+        /* ── Bottom Panel ── */
+        .bp-header {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 0 16px; height: 44px; border-bottom: 1px solid var(--border);
+          background: var(--bg-card);
+        }
+        .bp-tabs { display: flex; height: 100%; }
+        .bp-tab {
+          background: transparent; border: none; border-bottom: 2px solid transparent;
+          color: var(--text-dim); font-family: var(--mono); font-size: 11px; font-weight: 500;
+          padding: 0 16px; transition: all 0.2s; letter-spacing: 0.04em;
+        }
+        .bp-tab:hover { color: var(--text-mid); }
+        .bp-tab-active { color: var(--accent); border-bottom-color: var(--accent); }
+        .bp-actions { display: flex; gap: 6px; }
+
+        .bp-body {
+          display: flex; flex-direction: column; height: calc(100% - 44px);
+          background: var(--bg-panel); overflow-y: auto; padding-bottom: 20px;
+        }
+        
+        .bp-filetree {
+          padding: 12px 16px; border-bottom: 1px solid var(--border);
+          font-family: var(--mono); font-size: 11.5px;
+        }
+        .bpft-row { display: flex; align-items: center; margin-bottom: 6px; }
+        .bpft-child { padding-left: 20px; }
+        .bpft-name { color: #d0d8ec; }
+        .bpft-dim { color: var(--text-dim); }
+
+        .bp-summary {
+          padding: 12px 16px; font-family: var(--mono); font-size: 11px;
+          color: var(--text-mid); border-bottom: 1px solid var(--border);
+          background: rgba(255,255,255,0.01);
+        }
+
+        .bp-show-diff {
+          background: transparent; border: none; color: var(--accent);
+          font-family: var(--mono); font-size: 11px; padding: 12px 16px;
+          text-align: left; cursor: pointer; transition: color 0.15s;
+        }
+        .bp-show-diff:hover { color: #90cdf4; }
+
+        .bp-diff {
+          font-family: var(--mono); font-size: 12px; line-height: 1.5;
+          background: #151722;
+        }
+        .diff-row {
+          display: flex; padding: 0 16px; min-height: 20px;
+        }
+        .diff-ln { width: 40px; color: var(--text-dim); user-select: none; text-align: right; padding-right: 12px; }
+        .diff-prefix { width: 20px; user-select: none; text-align: center; font-weight: bold; }
+        .diff-code { flex: 1; white-space: pre; color: #c4ccdf; overflow-x: auto; scrollbar-width: none;}
+        .diff-code::-webkit-scrollbar { display: none; }
+        
+        .diff-collapsed-row {
+          background: rgba(255,255,255,0.02); color: var(--text-mid);
+          padding: 4px 16px 4px 56px; cursor: pointer; user-select: none;
+          font-size: 11px; border-top: 1px dashed rgba(255,255,255,0.05);
+          border-bottom: 1px dashed rgba(255,255,255,0.05); transition: background 0.1s;
+        }
+        .diff-collapsed-row:hover { background: rgba(255,255,255,0.04); }
+
+        /* Agent Reasoning Tab */
+        .bp-agent { padding: 24px 32px; max-width: 800px; margin: 0 auto; }
+        .agent-header {
+          font-size: 16px; font-weight: 600; color: #e0e6f5; margin-bottom: 12px;
+        }
+        .agent-text {
+          font-size: 14px; line-height: 1.6; color: #a0aec0; margin-bottom: 24px;
+        }
+        .agent-text code {
+          font-family: var(--mono); background: rgba(255,255,255,0.08);
+          padding: 2px 6px; border-radius: 4px; font-size: 12.5px; color: #d0d8ec;
+        }
+        .agent-affects {
+          background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+          border-radius: 8px; padding: 16px;
+        }
+        .agent-affects-label {
+          font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+          text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;
+        }
+        .agent-affect-row {
+          display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px;
+          font-size: 13px;
+        }
+        .agent-affect-row:last-child { margin-bottom: 0; }
+        .agent-affect-file { font-family: var(--mono); color: #e0e6f5; }
+        .agent-affect-reason { color: #a0aec0; flex: 1; }
+
       `}</style>
     </div>
   );
 }
-
-/*
-
-import React from "react";
-import "./Dashboard.css";
-
-export default function Dashboard() {
-  return (
-    <div className="dashboard-container">
-      <aside className="sidebar">
-        <h3>Menu</h3>
-        <ul>
-          <li>Explorer</li>
-          <li>Search</li>
-          <li>Source Control</li>
-        </ul>
-      </aside>
-
-      <main className="main-panel">
-        <div className="top-bar">Workspace – My Project</div>
-        <div className="cards">
-          <div className="card">
-            <h4>Terminal</h4>
-            <p>$ echo "Hello World"</p>
-          </div>
-
-          <div className="card">
-            <h4>Editor</h4>
-            <p>// Some code here</p>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-
-*/

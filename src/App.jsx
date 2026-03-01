@@ -1,11 +1,9 @@
-
+import { useState, useEffect } from "react";
+import Dashboard from "./components/Dashboard";
 import './App.css';
 
-import { useState, useEffect, useRef } from "react";
-import Dashboard from "./components/Dashboard";
-
 // ─── Nav links & landing data ─────────────────────────────────────────────────
-const NAV_LINKS = ["Product", "Docs", "Changelog", "Pricing"];
+const NAV_LINKS = ["Product", "Docs"];
 
 const STATS = [
   { value: "14ms",  label: "Avg. response latency" },
@@ -102,9 +100,8 @@ function LandingPage({ onLaunch }) {
         <div className="hero-inner">
           <div className="hero-badge">
             <span className="badge-pip" />
-            Now in public beta
             <span className="badge-sep">—</span>
-            <a href="#" className="badge-link">Read the launch post ↗</a>
+            <a href="#" className="badge-link"> Demo by Miao Lan Zhang ↗</a>
           </div>
 
           <h1 className="hero-h1">
@@ -113,55 +110,43 @@ function LandingPage({ onLaunch }) {
             for your codebase.
           </h1>
 
-          <p className="hero-sub">
-            JavaAI tracks every intent, dependency, and risk surface your AI agents
-            touch in real time — so you ship with confidence, not guesswork.
-          </p>
-
           <div className="hero-cta">
             <button className="btn-primary btn-lg" onClick={onLaunch}>
-              Launch dashboard
+              Live demo
               <svg viewBox="0 0 14 14" fill="none" width="13" height="13">
-                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M7 2v10M3 8l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <a className="btn-ghost btn-lg" href="#">
-              <svg viewBox="0 0 14 14" fill="none" width="13" height="13">
-                <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.3"/>
-                <path d="M5.5 5l4 2-4 2V5z" fill="currentColor"/>
-              </svg>
-              Watch demo
+
+            <a 
+              href="https://www.notion.so/JavaAI-31420807957280df90afea70b81c1028?pvs=25&showMoveTo=true&saveParent=true#31420807957280158c72e1601013f1bd" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="btn-ghost btn-lg"
+            >
+              Product Notes ↗
             </a>
           </div>
 
-          <p className="hero-fine">No credit card required · Works with any LLM runtime</p>
         </div>
 
-        {/* Dashboard preview */}
-        <div className="hero-preview" onClick={onLaunch} title="Open dashboard">
-          <div className="preview-bar">
-            <span className="preview-dot pd-r" /><span className="preview-dot pd-y" /><span className="preview-dot pd-g" />
-            <span className="preview-url">app.javaai.dev/dashboard</span>
-            <span className="preview-hint">Click to open →</span>
+
+
+        {/* Dashboard preview with new background wrapper */}
+        <div className="hero-preview-wrapper">
+          <div className="hero-preview" onClick={onLaunch} title="Open dashboard">
+            <div className="preview-bar">
+              <span className="preview-dot pd-r" /><span className="preview-dot pd-y" /><span className="preview-dot pd-g" />
+              <span className="preview-url">app.javaai.dev/dashboard</span>
+              <span className="preview-hint">Click to open →</span>
+            </div>
+            <div className="preview-screen">
+              <Dashboard/>
+            </div>
+            <div className="preview-vignette" />
           </div>
-          <div className="preview-screen">
-            <MiniDashboard />
-          </div>
-          <div className="preview-vignette" />
         </div>
       </section>
-
-      {/* ── Stats bar ── */}
-      <div className="stats-bar">
-        <div className="stats-inner">
-          {STATS.map((s, i) => (
-            <div key={i} className="stat-item">
-              <span className="stat-val">{s.value}</span>
-              <span className="stat-label">{s.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* ── Features ── */}
       <section className="features-section">
@@ -169,10 +154,10 @@ function LandingPage({ onLaunch }) {
           <div className="eyebrow">
             <span className="eyebrow-rule" />Capabilities<span className="eyebrow-rule" />
           </div>
-          <h2 className="section-h2">
+          <h1 className="hero-h1">
             Everything you need to understand<br />
             <span className="grad-text">what your agents are doing.</span>
-          </h2>
+          </h1>
           <p className="section-sub">
             Built for teams shipping AI-native products who can't afford runtime surprises.
           </p>
@@ -193,10 +178,10 @@ function LandingPage({ onLaunch }) {
       <section className="cta-section">
         <div className="cta-glow" />
         <div className="section-wrap cta-wrap">
-          <h2 className="section-h2">
+          <h1 className="hero-h1">
             Ready to see your agents<br />
             <span className="grad-text">think out loud?</span>
-          </h2>
+          </h1>
           <p className="section-sub" style={{ marginBottom: 32 }}>
             Join 800+ engineering teams using JavaAI to ship safer, faster.
           </p>
@@ -332,13 +317,16 @@ export default function App() {
   const [view, setView] = useState("landing"); // "landing" | "dashboard"
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { setTimeout(() => setMounted(true), 40); }, []);
+  useEffect(() => {
+    document.documentElement.style.cssText = "margin:0;padding:0;width:100%;overflow-x:hidden;";
+    document.body.style.cssText = "margin:0;padding:0;width:100%;overflow-x:hidden;background:#0c0d12;";
+    setTimeout(() => setMounted(true), 40);
+  }, []);
 
   return (
-    <div className={`root ${mounted ? "root-in" : ""}`}>
+    <div className={`root ${mounted ? "root-in" : ""}`} style={{ width: "100%", overflowX: "hidden", position: "relative" }}>
 
       {view === "dashboard" && (
-        // Back button floats over the dashboard
         <button className="back-btn" onClick={() => setView("landing")}>
           <svg viewBox="0 0 14 14" fill="none" width="12" height="12">
             <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -369,7 +357,7 @@ export default function App() {
           --text:        #c4ccdf;
           --text-mid:    #7a849e;
           --text-dim:    #444a60;
-          --accent:      #63b3ed;
+          --accent:      #FFFFFF;
           --accent-bg:   rgba(99,179,237,0.12);
           --green:       #4ade99;
           --green-bg:    rgba(74,222,153,0.1);
@@ -379,11 +367,12 @@ export default function App() {
           --sans:        'Syne', sans-serif;
         }
 
+        html, body { margin: 0 !important; padding: 0 !important; }
         html { scroll-behavior: smooth; }
         body { background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
         button { font-family: var(--sans); }
 
-        .root { opacity: 0; transition: opacity 0.35s ease; }
+        .root { opacity: 0; transition: opacity 0.35s ease; width: 100vw; box-sizing: border-box; }
         .root-in { opacity: 1; }
 
         /* ── Back button ── */
@@ -409,7 +398,7 @@ export default function App() {
           transition: background 0.18s, box-shadow 0.18s, transform 0.18s;
         }
         .btn-primary:hover {
-          background: #89cbf5;
+          background: #FFFFFF;
           box-shadow: 0 0 24px rgba(99,179,237,0.35);
           transform: translateY(-1px);
         }
@@ -428,12 +417,12 @@ export default function App() {
         .btn-ghost.btn-lg { font-size: 14px; padding: 11px 22px; border-radius: 9px; }
 
         /* ── Landing ── */
-        .landing { min-height: 100vh; }
+        .landing { min-height: 100vh; width: 100vw; display: flex; flex-direction: column; align-items: flex-start; }
 
         /* Nav */
         .nav {
           position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-          border-bottom: 1px solid transparent;
+          border-bottom: 1px solid transparent; width: 100%;
           transition: background 0.25s, border-color 0.25s, backdrop-filter 0.25s;
         }
         .nav-scrolled {
@@ -441,7 +430,8 @@ export default function App() {
           border-color: var(--border);
         }
         .nav-inner {
-          max-width: 1180px; margin: 0 auto; padding: 0 32px;
+          max-width: 1180px; margin: 0; 
+          padding: 0 32px; 
           height: 60px; display: flex; align-items: center; gap: 32px;
         }
         .nav-brand { display: flex; align-items: center; gap: 10px; }
@@ -476,14 +466,15 @@ export default function App() {
 
         /* Hero */
         .hero {
-          position: relative; min-height: 100vh;
-          display: flex; flex-direction: column; align-items: center;
-          padding: 140px 32px 60px; overflow: hidden; gap: 0;
+          position: relative; min-height: 100vh; width: 100vw;
+          display: flex; flex-direction: column; align-items: flex-start;
+          padding: 140px 32px 60px;
+          overflow: hidden; gap: 0;
         }
         .hero-inner {
-          position: relative; z-index: 1;
-          max-width: 700px; text-align: center;
-          display: flex; flex-direction: column; align-items: center;
+          position: relative; z-index: 1; margin: 0;
+          max-width: 700px; text-align: left;
+          display: flex; flex-direction: column; align-items: flex-start;
         }
         .hero-badge {
           display: inline-flex; align-items: center; gap: 8px;
@@ -498,7 +489,7 @@ export default function App() {
         .badge-link:hover { opacity: 0.75; }
 
         .hero-h1 {
-          font-size: clamp(38px, 6vw, 64px); font-weight: 700;
+          font-size: clamp(38px, 6vw, 24px); font-weight: 500;
           line-height: 1.1; color: #eef2fc; letter-spacing: -0.025em;
           margin-bottom: 24px;
         }
@@ -510,18 +501,38 @@ export default function App() {
           font-size: 17px; line-height: 1.65; color: var(--text-mid);
           max-width: 500px; margin-bottom: 36px;
         }
-        .hero-cta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+        .hero-cta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-start; margin-bottom: 60px; }
         .hero-fine { font-family: var(--mono); font-size: 11px; color: var(--text-dim); letter-spacing: 0.04em; }
 
-        /* Dashboard preview */
-        .hero-preview {
-          position: relative; z-index: 1;
-          margin-top: 56px; width: 100%; max-width: 900px;
-          border: 1px solid var(--border-hi); border-radius: 12px; overflow: hidden;
-          box-shadow: 0 30px 90px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,179,237,0.05);
-          cursor: pointer;
-          transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+        /* Dashboard preview wrapper & Background */
+        .hero-preview-wrapper {
+          width: 100%;
+          max-width: 1600px; /* increase from 1000px */
+          padding: 32px;
+          border-radius: 20px;
+          background: linear-gradient(145deg, rgba(99, 179, 237, 0.08) 0%, rgba(12, 13, 18, 0.4) 100%);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          box-shadow: inset 0 0 80px rgba(99, 179, 237, 0.03);
+          display: flex;
+          justify-content: center;
+          align-items: center;
         }
+        .hero-preview-wrapper::before {
+          content: ""; position: absolute; inset: 0; border-radius: 20px;
+          background: radial-gradient(circle at top center, rgba(99,179,237,0.1), transparent 60%);
+          pointer-events: none;
+        }
+        
+        .hero-preview {
+            width: 100%;
+            max-width: 1200px; 
+            border: 1px solid var(--border-hi);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 30px 90px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,179,237,0.05);
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+          }
         .hero-preview:hover {
           border-color: rgba(99,179,237,0.22);
           box-shadow: 0 40px 100px rgba(0,0,0,0.65), 0 0 0 1px rgba(99,179,237,0.1), 0 0 60px rgba(99,179,237,0.04);
@@ -546,14 +557,13 @@ export default function App() {
         .hero-preview:hover .preview-hint { color: var(--accent); }
         .preview-screen { pointer-events: none; }
         .preview-vignette {
-          position: absolute; bottom: 0; left: 0; right: 0; height: 80px;
-          background: linear-gradient(to top, rgba(12,13,18,0.8), transparent);
+          position: absolute; bottom: 0; left: 0; right: 0; height: 0;
           pointer-events: none;
         }
 
         /* Mini dashboard */
         .mini-dash {
-          display: flex; height: 280px; background: var(--bg);
+          display: flex; height: 480px; background: var(--bg);
           font-family: var(--mono); font-size: 9px;
         }
         .mini-side {
@@ -626,10 +636,10 @@ export default function App() {
         /* Stats bar */
         .stats-bar {
           border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-          background: rgba(255,255,255,0.012);
+          background: rgba(255,255,255,0.012); width: 100vw;
         }
         .stats-inner {
-          max-width: 1180px; margin: 0 auto; padding: 0 32px;
+          max-width: 1180px; margin: 0; padding: 0 32px;
           display: grid; grid-template-columns: repeat(4,1fr);
         }
         .stat-item {
@@ -644,10 +654,10 @@ export default function App() {
         .stat-label { font-size: 12px; color: var(--text-mid); }
 
         /* Features */
-        .features-section { padding: 100px 32px; }
-        .section-wrap { max-width: 1100px; margin: 0 auto; }
+        .features-section { padding: 100px 32px; width: 100vw; }
+        .section-wrap { max-width: 1100px; margin: 0; }
         .eyebrow {
-          display: flex; align-items: center; gap: 14px; justify-content: center;
+          display: flex; align-items: center; gap: 14px; justify-content: flex-start;
           font-family: var(--mono); font-size: 11px; color: var(--text-dim);
           letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 28px;
         }
@@ -655,11 +665,11 @@ export default function App() {
         .section-h2 {
           font-size: clamp(28px, 4vw, 42px); font-weight: 700;
           line-height: 1.18; letter-spacing: -0.02em;
-          color: #eef2fc; text-align: center; margin-bottom: 14px;
+          color: #eef2fc; text-align: left; margin-bottom: 14px;
         }
         .section-sub {
-          font-size: 15.5px; color: var(--text-mid); text-align: center;
-          max-width: 460px; margin: 0 auto 56px; line-height: 1.6;
+          font-size: 15.5px; color: var(--text-mid); text-align: left;
+          max-width: 460px; margin: 0 0 56px 0; line-height: 1.6;
         }
         .features-grid {
           display: grid; grid-template-columns: repeat(3,1fr); gap: 1px;
@@ -683,7 +693,7 @@ export default function App() {
 
         /* CTA */
         .cta-section {
-          position: relative; overflow: hidden;
+          position: relative; overflow: hidden; width: 100vw;
           border-top: 1px solid var(--border); padding: 100px 32px;
         }
         .cta-glow {
@@ -691,151 +701,20 @@ export default function App() {
           top: 50%; left: 50%; transform: translate(-50%, -50%);
           background: rgba(99,179,237,0.05); filter: blur(80px); pointer-events: none;
         }
-        .cta-wrap { position: relative; z-index: 1; text-align: center; display: flex; flex-direction: column; align-items: center; }
-        .cta-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+        .cta-wrap { position: relative; z-index: 1; text-align: left; display: flex; flex-direction: column; align-items: flex-start; margin: 0; }
+        .cta-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: flex-start; }
 
         /* Footer */
-        .footer { border-top: 1px solid var(--border); padding: 28px 0; }
-        .footer-inner {
-          max-width: 1180px; margin: 0 auto; padding: 0 32px;
-          display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
-        }
+        .footer { border-top: 1px solid var(--border); padding: 40px 32px; width: 100vw; }
+        .footer-inner { max-width: 1180px; margin: 0; display: flex; align-items: center; justify-content: space-between; }
         .footer-brand { display: flex; align-items: center; gap: 8px; }
-        .footer-wordmark {
-          font-family: var(--sans); font-size: 11px; font-weight: 600;
-          color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase;
-        }
-        .footer-links { display: flex; gap: 2px; flex: 1; }
-        .footer-link {
-          font-size: 12px; color: var(--text-dim); text-decoration: none;
-          padding: 4px 10px; border-radius: 5px; transition: color 0.13s;
-        }
-        .footer-link:hover { color: var(--text-mid); }
-        .footer-copy { font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-left: auto; }
+        .footer-wordmark { font-family: var(--sans); font-size: 12px; font-weight: 600; color: #e0e6f5; letter-spacing: 0.08em; text-transform: uppercase; }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-link { font-size: 12px; color: var(--text-mid); text-decoration: none; transition: color 0.15s; }
+        .footer-link:hover { color: var(--text); }
+        .footer-copy { font-size: 12px; color: var(--text-dim); }
 
-        @media (max-width: 820px) {
-          .stats-inner { grid-template-columns: repeat(2,1fr); }
-          .features-grid { grid-template-columns: 1fr; }
-          .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
-          .nav-links { display: none; }
-          .footer-copy { margin-left: 0; }
-          .mini-center { width: 120px; min-width: 120px; }
-        }
       `}</style>
     </div>
   );
 }
-
-
-/*
-export default function App() {
-  const knowledgeBase = {
-    "how are you": "I'm functioning within normal parameters.",
-    "what is your name": "My name is AEAI.",
-    "why are you here": "To assist and answer your questions.",
-    "what is the meaning of life": "42, obviously."
-  };
-
-  return (
-    <div style={{ fontFamily: "Arial, sans-serif", background: "#f5f5f5" }}>
-      {/* Hero */ /*
-      <header style={{
-        textAlign: "center",
-        padding: "120px 20px",
-        background: "linear-gradient(135deg, #fff, #fff)",
-        color: "black"
-      }}>
-        <h1 style={{ fontSize: "3rem", marginBottom: 20 }}>AEAI – Interactive AI Bot</h1>
-        <p style={{ fontSize: "1.25rem", marginBottom: 40 }}>
-          Ask questions and explore instant AI responses like Cursor.
-        </p>
-        <button style={{
-          padding: "15px 30px",
-          fontSize: "1rem",
-          borderRadius: 8,
-          border: "none",
-          backgroundColor: "#fff",
-          color: "#4f46e5",
-          cursor: "pointer"
-        }}>
-          Get Started
-        </button>
-      </header>
-
-
-*/
-
-     /*
-      {/* Interactive Demo */ 
-
-      /*
-      <section style={{ padding: "60px 20px", textAlign: "center" }}>
-        <h2 style={{ fontSize: "2rem", marginBottom: 30 }}>Try the AI Bot</h2>
-        <QuestionBot knowledgeBase={knowledgeBase} />
-      </section>
-
-      <section style={{ padding: "60px 20px", textAlign: "center" }}>
-  <h2>VS Code-Style Dashboard</h2>
-  <Dashboard />
-</section>
-
- {/* Features */
- /*
-      <section style={{ display: "flex", justifyContent: "center", gap: 20, padding: "60px 20px", flexWrap: "wrap" }}>
-        {[
-          { title: "Instant Answers", desc: "Get AI responses instantly as you type." },
-          { title: "Interactive UI", desc: "Click, type, and see live updates without page reloads." },
-          { title: "Reusable Components", desc: "Easily embed your bot anywhere on the page." }
-        ].map((f, i) => (
-          <div key={i} style={{
-            background: "#fff",
-            padding: 30,
-            borderRadius: 12,
-            width: 250,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            textAlign: "center"
-          }}>
-            <h3 style={{ fontSize: "1.25rem", marginBottom: 10 }}>{f.title}</h3>
-            <p style={{ color: "#555" }}>{f.desc}</p>
-          </div>
-        ))}
-
-        
-      </section>
-
-
-
-
-
-
-      {/* Footer / CTA */ 
-      <footer style={{
-        textAlign: "center",
-        padding: 40,
-        backgroundColor: "#1f2937",
-        color: "#fff",
-        marginTop: 60
-      }}>
-        <p>Ready to try AEAI? Start now!</p>
-        <button style={{
-          padding: "12px 28px",
-          fontSize: "1rem",
-          borderRadius: 6,
-          border: "none",
-          backgroundColor: "#4f46e5",
-          color: "#fff",
-          cursor: "pointer",
-          marginTop: 15
-        }}>
-          Launch Demo
-        </button>
-      </footer>
-
-
-/*
-      
-    </div>
-  );
-}
-
-*/
